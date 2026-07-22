@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serpiente Nokia</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #2d2d2d;
+            font-family: 'Courier New', monospace;
+        }
+        .nokia {
+            background: #3a3a4a;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        .screen {
+            background: #8bac0f;
+            border: 3px solid #1a1a2e;
+            padding: 10px;
+            width: 300px;
+            height: 300px;
+            position: relative;
+            image-rendering: pixelated;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+        .info {
+            color: #1a1a2e;
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn {
+            background: #1a1a2e;
+            color: #8bac0f;
+            border: none;
+            padding: 8px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .btn:hover { background: #2a2a3e; }
+        .d-pad {
+            display: grid;
+            grid-template-columns: 40px 40px 40px;
+            grid-template-rows: 40px 40px;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .d-pad button {
+            background: #1a1a2e;
+            color: #8bac0f;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .d-pad button:active { background: #2a2a3e; }
+    </style>
+</head>
+<body>
+    <div class="nokia">
+        <div class="screen">
+            <canvas id="game" width="150" height="150"></canvas>
+        </div>
+        <div class="info">
+            <div>Puntos: <span id="score">0</span></div>
+            <div id="msg">Presiona ENTER para jugar</div>
+        </div>
+        <div class="buttons">
+            <button class="btn" onclick="startGame()">INICIAR</button>
+        </div>
+        <div class="d-pad">
+            <div></div>
+            <button onclick="setDir(0,-1)">^</button>
+            <div></div>
+            <button onclick="setDir(-1,0)">&lt;</button>
+            <button onclick="setDir(0,1)">v</button>
+            <button onclick="setDir(1,0)">&gt;</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const msgEl = document.getElementById('msg');
+
+        const GRID = 15;
+        const SIZE = 150 / GRID;
+
+        let snake, food, dir, nextDir, score, running, loop;
+
+        function init() {
+            snake = [{x:7,y:7},{x:6,y:7},{x:5,y:7}];
+            dir = {x:1,y:0};
+            nextDir = {x:1,y:0};
+            score = 0;
+            scoreEl.textContent = score;
+            placeFood();
+        }
+
+        function placeFood() {
+            do {
+                food = {x:Math.floor(Math.random()*GRID), y:Math.floor(Math.random()*GRID)};
+            } while(snake.some(s => s.x === food.x && s.y === food.y));
+        }
+
+        function update() {
+            dir = nextDir;
+            const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+            if(head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID ||
+               snake.some(s => s.x === head.x && s.y === head.y)) {
+                running = false;
+                clearInterval(loop);
+                msgEl.textContent = 'GAME OVER! Presiona ENTER';
+                return;
+            }
+
+            snake.unshift(head);
+
+            if(head.x === food.x && head.y === food.y) {
+                score++;
+                scoreEl.textContent = score;
+                placeFood();
+            } else {
+                snake.pop();
+            }
+
+            draw();
+        }
+
+        function draw() {
+            ctx.fillStyle = '#8bac0f';
+            ctx.fillRect(0,0,150,150);
+
+            ctx.fillStyle = '#0f380f';
+            snake.forEach(s => ctx.fillRect(s.x*SIZE, s.y*SIZE, SIZE, SIZE));
+
+            ctx.fillStyle = '#306230';
+            ctx.beginPath();
+            ctx.arc(food.x*SIZE+SIZE/2, food.y*SIZE+SIZE/2, SIZE/2.5, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        function setDir(x,y) {
+            if(x !== -dir.x || y !== -dir.y) {
+                nextDir = {x,y};
+            }
+        }
+
+        function startGame() {
+            init();
+            running = true;
+            msgEl.textContent = '¡Buena suerte!';
+            draw();
+            loop = setInterval(update, 150);
+        }
+
+        document.addEventListener('keydown', e => {
+            if(e.key === 'Enter' && !running) { startGame(); return; }
+            if(e.key === 'ArrowUp') setDir(0,-1);
+            if(e.key === 'ArrowDown') setDir(0,1);
+            if(e.key === 'ArrowLeft') setDir(-1,0);
+            if(e.key === 'ArrowRight') setDir(1,0);
+        });
+
+        init();
+        draw();
+    </script>
+</body>
+</html>
